@@ -1,6 +1,6 @@
 """
 Tool FastMCP để lưu lịch sử chat vào file .md
-Có @mcp.get và @mcp.post decorators
+Sử dụng @mcp.tool decorator
 """
 import os
 from datetime import datetime
@@ -23,7 +23,7 @@ def ensure_chat_file():
             f.write("---\n\n")
 
 
-@mcp.get("/chat_history")
+@mcp.tool()
 def get_chat_history(limit: Optional[int] = None) -> str:
     """
     Lấy lịch sử chat từ file .md
@@ -50,7 +50,7 @@ def get_chat_history(limit: Optional[int] = None) -> str:
         return f"Lỗi khi đọc file: {str(e)}"
 
 
-@mcp.post("/chat_history")
+@mcp.tool()
 def save_chat_message(user: str, message: str, timestamp: Optional[str] = None) -> str:
     """
     Lưu một tin nhắn mới vào lịch sử chat
@@ -79,7 +79,7 @@ def save_chat_message(user: str, message: str, timestamp: Optional[str] = None) 
         return f"Lỗi khi lưu tin nhắn: {str(e)}"
 
 
-@mcp.post("/chat_history/batch")
+@mcp.tool()
 def save_chat_messages(messages: list) -> str:
     """
     Lưu nhiều tin nhắn cùng lúc vào lịch sử chat
@@ -110,7 +110,7 @@ def save_chat_messages(messages: list) -> str:
         return f"Lỗi khi lưu tin nhắn: {str(e)}"
 
 
-@mcp.get("/chat_history/clear")
+@mcp.tool()
 def clear_chat_history() -> str:
     """
     Xóa toàn bộ lịch sử chat
