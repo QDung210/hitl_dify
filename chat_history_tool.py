@@ -3,6 +3,7 @@ Tool FastMCP để lưu lịch sử chat vào file .md
 Sử dụng @mcp.tool decorator
 """
 import os
+import re
 from datetime import datetime
 from typing import Optional
 from fastmcp import FastMCP
@@ -27,12 +28,13 @@ def ensure_chat_file():
 def get_chat_history(limit: Optional[int] = None) -> str:
     """
     Lấy lịch sử chat từ file .md
+    Nếu không có limit, sẽ trả về câu hỏi của người dùng gần thứ 2
     
     Args:
-        limit: Số lượng tin nhắn gần nhất cần lấy (None = lấy tất cả)
+        limit: Số lượng tin nhắn gần nhất cần lấy (None = lấy câu hỏi người dùng gần thứ 2)
     
     Returns:
-        str: Nội dung lịch sử chat dưới dạng Markdown
+        str: Nội dung lịch sử chat dưới dạng Markdown hoặc câu hỏi người dùng gần thứ 2
     """
     ensure_chat_file()
     
@@ -44,8 +46,35 @@ def get_chat_history(limit: Optional[int] = None) -> str:
             # Lấy N dòng cuối cùng
             lines = content.split('\n')
             content = '\n'.join(lines[-limit:])
+            return content
         
-        return content
+        # Parse file để lấy các tin nhắn của người dùng
+        # Tìm tất cả các tin nhắn với pattern: ## timestamp\n\n**user**: message
+        pattern = r'##\s+([^\n]+)\n\n\*\*([^\*]+)\*\*:\s+([^\n]+)'
+        matches = re.findall(pattern, content)
+        
+        # Lọc các tin nhắn của người dùng (loại bỏ các tin nhắn từ AI/assistant/system)
+        user_messages = []
+        exclude_users = ['assistant', 'ai', 'system', 'bot', 'Assistant', 'AI', 'System', 'Bot']
+        
+        for timestamp, user, message in matches:
+            user_lower = user.strip().lower()
+            if not any(excluded in user_lower for excluded in exclude_users):
+                user_messages.append({
+                    'timestamp': timestamp.strip(),
+                    'user': user.strip(),
+                    'message': message.strip()
+                })
+        
+        # Lấy câu hỏi thứ 2 gần nhất (từ cuối lên)
+        if len(user_messages) >= 2:
+            second_last = user_messages[-2]
+            return second_last['message']
+        elif len(user_messages) == 1:
+            return user_messages[0]['message']
+        else:
+            return "Không tìm thấy câu hỏi nào của người dùng"
+            
     except Exception as e:
         return f"Lỗi khi đọc file: {str(e)}"
 
